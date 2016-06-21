@@ -1,6 +1,8 @@
-one_version:
+one_version: 5.0
 ansible_ssh_port: 22
 oneadmin_pwd: oneadmin
 in_ports:
   - 80
   - 443
+
+ceph_datastore: no

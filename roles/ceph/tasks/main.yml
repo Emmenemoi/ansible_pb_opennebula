@@ -1,0 +1,62 @@
+- fail: msg="ceph_keys variable must be defined as hash"
+  register: cephx_pb 
+  when: ceph_keys is not mapping 
+- fail: msg="ceph_libvirt_secret_uuid must be provided for cephx through libvirt" 
+  when: ceph_libvirt_secret_uuid is not defined or (ceph_libvirt_secret_uuid | trim == '')
+
+- name: Set Ceph distro
+  set_fact:
+    ceph_distro: "{{ 'el' + ansible_distribution_major_version  }}"
+  when: ansible_os_family == 'RedHat'
+
+- name: Set Ceph distro
+  set_fact:
+    ceph_distro: "{{ 'debian-' + ansible_distribution_major_version  }}"
+  when: ansible_os_family == 'Debian'
+
+- name: enable ceph repos
+  action: template src="ceph.repo.j2" dest="/etc/yum.repos.d/ceph.repo" owner=root group=root mode=644
+  when: ansible_os_family == 'RedHat'
+
+- name: install the latest version of ceph client {{ ceph_release }}
+  package: name=ceph-common state=latest
+
+- name: generate ceph config
+  action: template src="ceph.conf.j2" dest="/etc/ceph/ceph.conf" owner=root group=root mode=644
+
+- name: Pushing cephx keyring
+  copy:
+    content: "[client.{{ item.key }}]\n        key = {{ item.value }}\n\r"
+    dest: "/etc/ceph/ceph.client.{{ item.key }}.keyring"
+    mode: "0600"
+  with_dict: "{{ ceph_keys }}"
+  when:
+    - ceph_keys is mapping
+
+# load cephx into libvirt
+- name: check if libvirt secret set
+  command: virsh secret-get-value {{ ceph_libvirt_secret_uuid }}
+  register: result
+  changed_when: false
+  failed_when: false
+
+- name: Create libvirt secrets
+  copy:
+    content: "<secret ephemeral='no' private='no'>\n  <uuid>{{ ceph_libvirt_secret_uuid }}</uuid>\n  <usage type='ceph'>\n          <name>client.{{ item.key }} secret</name>\n  </usage>\n</secret>\n\r"
+    dest: "/var/lib/one/{{ item.key }}.secret.xml"
+    mode: "0600"
+  with_dict: "{{ ceph_keys }}"
+  when:
+    - result.rc != 0
+    - ceph_keys is mapping
+    - not (ceph_libvirt_secret_uuid | trim) == '' 
+
+- name: define libvirt rbd secret
+  command: virsh secret-define /var/lib/one/{{ item.key }}.secret.xml
+  when: result.rc != 0
+  with_dict: "{{ ceph_keys }}"
+
+- name: set libvirt rbd secret
+  command: virsh secret-set-value --secret {{ ceph_libvirt_secret_uuid }} --base64 {{ item.value }}
+  when: result.rc != 0
+  with_dict: "{{ ceph_keys }}"

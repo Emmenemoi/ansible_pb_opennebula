@@ -4,3 +4,5 @@
     - iptables
     - { role: yumrepos, repos: [opennebula]}
     - one_kvmnode
+    - { role: ceph,  ignore_errors: no, when: ceph_datastore | bool }
+ 
