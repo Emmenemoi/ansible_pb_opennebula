@@ -26,11 +26,14 @@ Edit the +hosts+ file. Put the management host under +[one-mgmt]+
 ----
 
 Put all your hypervisor hosts under +[kvmnodes]+
+I nodes are existing and you want to import vm without touching configs, use import_node variable like below. Possible values are yes/no/ovirt (ovirt add sasl credentials to allow both systems to exist. But BEWARE of management / scheduler conflicts after imports.)
 
 [bash]
 ----
 [kvmnodes]
 192.168.122.34 listen_addr=eth0
+192.168.122.34 listen_addr=eth0 import_node=yes/ovirt
+
 ----
 
 === Execute the playbooks
