@@ -3,6 +3,9 @@ project_name: "one_kvmnode"
 
 
 ####################
-# 
+# libvirt imports
 ####################
 
+# for ovirt:
+libvirt_sasl:
+  opennebula: opennebula

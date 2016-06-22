@@ -7,10 +7,48 @@
 
 - name: configure udev
   action: copy src=80-kvm.rules dest=/etc/udev/rules.d/80-kvm.rules owner=root group=root mode=644
+  when: import_node is undefined
 
 - name: configure libvirt
   action: template src=libvirtd.conf.j2 dest=/etc/libvirt/libvirtd.conf 
   notify: restart libvirtd
+  when: import_node is undefined
+
+
+- name: add libvirt sasl credentials
+  command: echo {{ item.value }} | saslpasswd2 -p -a libvirt {{ item.key }}
+  with_dict: "{{ libvirt_sasl }}"
+  when:
+    - not import_node is undefined 
+    - import_node == 'ovirt'
+
+- name: add oneadmin to qemu group for libvirt auth
+  user: name=oneadmin groups=qemu append=yes
+  when:
+    - not import_node is undefined 
+    - import_node == 'ovirt'
+
+- file: path=/etc/libvirt state=directory group=qemu mode=0750
+- name: configure libvirt sasl auto auth
+  copy:
+    content: "[auth-libvirt-localhost]\ncredentials=opennebula\n\n[credentials-opennebula]\nauthname={{ item.key }}\npassword={{ item.value }}\n\r"
+    dest: "/etc/libvirt/auth.conf"
+    mode: "0640"
+    owner: root
+    group: qemu
+  with_dict: "{{ libvirt_sasl }}"
+  when:
+    - not import_node is undefined 
+    - import_node == 'ovirt'
+
+
+- name: add host to known hosts
+  command: "ssh-keyscan {{ inventory_hostname }}"
+  delegate_to: "{{ mgmt_host }}"
+  register: keyscan
+- lineinfile: name=/var/lib/one/.ssh/known_hosts create=yes line={{ item }}
+  with_items: '{{ keyscan.stdout_lines }}'
+  delegate_to: "{{ mgmt_host }}"
 
 - name: synchronize oneadmin ssh keys
   action: synchronize dest=/var/lib/one/.ssh/ src=/var/lib/one/.ssh/ delete=yes

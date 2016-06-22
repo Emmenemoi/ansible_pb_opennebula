@@ -1,5 +1,4 @@
 - fail: msg="ceph_keys variable must be defined as hash"
-  register: cephx_pb 
   when: ceph_keys is not mapping 
 - fail: msg="ceph_libvirt_secret_uuid must be provided for cephx through libvirt" 
   when: ceph_libvirt_secret_uuid is not defined or (ceph_libvirt_secret_uuid | trim == '')
@@ -47,16 +46,21 @@
     mode: "0600"
   with_dict: "{{ ceph_keys }}"
   when:
+    - result.rc is defined
     - result.rc != 0
     - ceph_keys is mapping
     - not (ceph_libvirt_secret_uuid | trim) == '' 
 
 - name: define libvirt rbd secret
   command: virsh secret-define /var/lib/one/{{ item.key }}.secret.xml
-  when: result.rc != 0
   with_dict: "{{ ceph_keys }}"
+  when:
+    - result.rc is defined
+    - result.rc != 0
 
 - name: set libvirt rbd secret
   command: virsh secret-set-value --secret {{ ceph_libvirt_secret_uuid }} --base64 {{ item.value }}
-  when: result.rc != 0
   with_dict: "{{ ceph_keys }}"
+  when:
+    - result.rc is defined
+    - result.rc != 0

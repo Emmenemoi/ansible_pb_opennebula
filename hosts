@@ -3,4 +3,5 @@
 
 [kvmnodes]
 192.168.122.34 listen_addr=eth0
+192.168.122.35 listen_addr=eth0 import_node=ovirt
 
