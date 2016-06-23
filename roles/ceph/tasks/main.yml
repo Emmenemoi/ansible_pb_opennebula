@@ -17,8 +17,19 @@
   action: template src="ceph.repo.j2" dest="/etc/yum.repos.d/ceph.repo" owner=root group=root mode=644
   when: ansible_os_family == 'RedHat'
 
+- name: enable elrepo-kernel repos
+  action: template src="elrepo.repo.j2" dest="/etc/yum.repos.d/elrepo.repo" owner=root group=root mode=644
+  when: ansible_os_family == 'RedHat'
+
 - name: install the latest version of ceph client {{ ceph_release }}
   package: name=ceph-common state=latest
+
+- name: install the latest main line kernel
+  package: name=kernel-ml state=latest
+
+- name: remove saved grub to use installed kernel on next reboot
+  file: path=/boot/grub2/grubenv state=absent
+
 
 - name: generate ceph config
   action: template src="ceph.conf.j2" dest="/etc/ceph/ceph.conf" owner=root group=root mode=644
