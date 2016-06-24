@@ -38,7 +38,8 @@
   copy:
     content: "[client.{{ item.key }}]\n        key = {{ item.value }}\n\r"
     dest: "/etc/ceph/ceph.client.{{ item.key }}.keyring"
-    mode: "0600"
+    mode: "0640"
+	group: "qemu"
   with_dict: "{{ ceph_keys }}"
   when:
     - ceph_keys is mapping

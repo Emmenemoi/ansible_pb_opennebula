@@ -1,8 +1,9 @@
 ---
 - name: install packages
-  action: yum name={{ item }}
+  package: name={{ item }} state=latest
   with_items:
     - rsync
+	- kvm
     - opennebula-node-kvm
 
 - name: configure udev
@@ -14,16 +15,12 @@
   notify: restart libvirtd
   when: import_node is undefined
 
+- name: add oneadmin to qemu group for libvirt and ceph auth
+  user: name=oneadmin groups=qemu append=yes
 
 - name: add libvirt sasl credentials
   command: echo {{ item.value }} | saslpasswd2 -p -a libvirt {{ item.key }}
   with_dict: "{{ libvirt_sasl }}"
-  when:
-    - not import_node is undefined 
-    - import_node == 'ovirt'
-
-- name: add oneadmin to qemu group for libvirt auth
-  user: name=oneadmin groups=qemu append=yes
   when:
     - not import_node is undefined 
     - import_node == 'ovirt'

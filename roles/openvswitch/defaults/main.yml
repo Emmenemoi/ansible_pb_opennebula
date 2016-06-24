@@ -1,0 +1,13 @@
+---
+project_name: "openvswitch"
+
+
+####################
+# openvswitch
+####################
+
+deploy_openvswitch: no
+
+ovs_bridges:
+	eth0: br0
+

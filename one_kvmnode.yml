@@ -3,6 +3,7 @@
   roles:
     - { role: iptables, when: import_node is undefined }
     - { role: yumrepos, repos: [opennebula]}
+    - { role: openvswitch, when: deploy_openvswitch | bool }
     - one_kvmnode
     - { role: ceph,  ignore_errors: no, when: ceph_datastore | bool and import_node is undefined }
  

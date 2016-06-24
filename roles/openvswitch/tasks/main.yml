@@ -1,0 +1,10 @@
+- name: install the openvswitch 2.5.0 rpm from a remote repo
+  yum: name=http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm state=present
+
+- name: add ovs bridges
+  openvswitch_bridge: bridge=item.value state=present
+  with_dict: ovs_bridges
+
+- name: add iface to ovs bridges
+  openvswitch_port: bridge=item.value port=item.key state=present
+  with_dict: ovs_bridges
