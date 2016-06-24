@@ -1,0 +1,6 @@
+TYPE="OVSPort"
+DEVICE="{{ item.key }}"
+NAME={{ item.key }}
+ONBOOT=yes
+OVS_BRIDGE={{ item.value }}
+DEVICETYPE="ovs"

@@ -3,7 +3,7 @@
   package: name={{ item }} state=latest
   with_items:
     - rsync
-	- kvm
+    - kvm
     - opennebula-node-kvm
 
 - name: configure udev
@@ -59,3 +59,17 @@
 - name: set SELinux label on authorized_keys
   action: file path=/var/lib/one/.ssh/authorized_keys setype=ssh_home_t
 
+
+- name: clean libvirt default net
+  command: "virsh {{ item }} default"
+  with_items:
+    - "net-destroy"
+    - "net-undefine"
+  changed_when: false
+  failed_when: false
+
+#- virt_net: command=destroy name=default
+#- virt_net: command=undefine name=default
+
+
+# service libvirtd restart

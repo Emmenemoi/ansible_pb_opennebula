@@ -1,10 +1,30 @@
 - name: install the openvswitch 2.5.0 rpm from a remote repo
   yum: name=http://cbs.centos.org/kojifiles/packages/openvswitch/2.5.0/2.el7/x86_64/openvswitch-2.5.0-2.el7.x86_64.rpm state=present
 
+#- set_fact:  iface_uuid_{{ item.key }}={{ lookup('ini', "UUID type=properties file=/etc/sysconfig/network-scripts/ifcfg-{{ item.key }}") }}
+#  with_dict: "{{ ovs_bridges }}"
+
 - name: add ovs bridges
-  openvswitch_bridge: bridge=item.value state=present
-  with_dict: ovs_bridges
+  openvswitch_bridge: bridge={{ item.value }} state=present
+  with_dict: "{{ ovs_bridges }}"
+
+- name: generate viface configs
+  template: src="viface.script.j2" dest="/etc/sysconfig/network-scripts/ifcfg-{{ item.value }}" owner=root group=root mode=600
+  with_dict: "{{ ovs_bridges }}"
+
+- name: generate iface configs
+  template: src="iface.script.j2" dest="/etc/sysconfig/network-scripts/ifcfg-{{ item.key }}" owner=root group=root mode=600
+  with_dict: "{{ ovs_bridges }}"
+#  notify: restart openvswitch
+
+- name: start openvswitch on boot
+  service: name=openvswitch state=started enabled=yes
+
+- name: disable NetworkManager
+  service: name=NetworkManager state=stopped enabled=no
+- name: enable network
+  service: name=network enabled=yes
 
 - name: add iface to ovs bridges
-  openvswitch_port: bridge=item.value port=item.key state=present
-  with_dict: ovs_bridges
+  openvswitch_port: bridge={{ item.value }} port={{ item.key }} state=present
+  with_dict: "{{ ovs_bridges }}"
